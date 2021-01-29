@@ -20,7 +20,7 @@ const MOTOR_CONTROL_CHARACTERISTIC_UUID = '00001530b87f490c92cb11ba5ea5167c';
 //const MOTOR_STOP = 0x50;
 //const MOTOR_MOVE_DOWN = 0x96;
 // timeout
-const DEFAULT_TIMEOUT = 10000; // 10s
+const DEFAULT_TIMEOUT_IN_SECS = 10;
 
 export interface SOMADeviceInformation {
 	manufacturer: string;
@@ -33,6 +33,7 @@ export interface SOMADeviceInformation {
 export class SOMADevice {
 	private log: Logger;
 	private peripheral: noble.Peripheral;
+	private timeout: number;
 
 	private characteristics: {
 		battery: noble.Characteristic | null;
@@ -46,9 +47,10 @@ export class SOMADevice {
 	private connected = false;
 	private initialized = false;
 
-	constructor(log: Logger, peripheral: noble.Peripheral) {
+	constructor(log: Logger, peripheral: noble.Peripheral, timeout: number = DEFAULT_TIMEOUT_IN_SECS) {
 		this.log = log;
 		this.peripheral = peripheral;
+		this.timeout = timeout * 1000; // From seconds
 
 		this.characteristics = {
 			battery: null,
@@ -101,7 +103,7 @@ export class SOMADevice {
 
 		return Promise.race([
 			this.peripheral.connectAsync(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then(() => {
 			this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is connected`);
 			this.connected = true;
@@ -130,7 +132,7 @@ export class SOMADevice {
 
 		const services: noble.Service[] = await Promise.race([
 			this.peripheral.discoverServicesAsync([INFO_SERVICE_UUID]),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((ret) => {
 			if (ret && Array.isArray(ret)) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is discovering info services as array`);
@@ -152,7 +154,7 @@ export class SOMADevice {
 
 		const characteristics: noble.Characteristic[] = await Promise.race([
 			services[0].discoverCharacteristicsAsync(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((ret) => {
 			if (ret && Array.isArray(ret)) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is discovering info characteristics as array`);
@@ -266,7 +268,7 @@ export class SOMADevice {
 
 		const services: noble.Service[] = await Promise.race([
 			this.peripheral.discoverServicesAsync([BATTERY_SERVICE_UUID, MOTOR_SERVICE_UUID]),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((ret) => {
 			if (ret && Array.isArray(ret)) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is discovering services as array`);
@@ -288,7 +290,7 @@ export class SOMADevice {
 
 		const batteryCharacteristics: noble.Characteristic[] = await Promise.race([
 			services[0].discoverCharacteristicsAsync([BATTERY_LEVEL_CHARACTERISTIC_UUID]),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((ret) => {
 			if (ret && Array.isArray(ret)) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is discovering battery characteristics as array`);
@@ -312,7 +314,7 @@ export class SOMADevice {
 
 		const motorCharacteristics: noble.Characteristic[] = await Promise.race([
 			services[1].discoverCharacteristicsAsync([MOTOR_STATE_CHARACTERISTIC_UUID, MOTOR_TARGET_CHARACTERISTIC_UUID, MOTOR_CONTROL_CHARACTERISTIC_UUID]),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((ret) => {
 			if (ret && Array.isArray(ret)) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is discovering motor characteristics as array`);
@@ -370,7 +372,7 @@ export class SOMADevice {
 
 		return Promise.race([
 			this.characteristics.battery.readAsync(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((buffer) => {
 			if (buffer instanceof Buffer) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is reading battery as buffer`);
@@ -402,7 +404,7 @@ export class SOMADevice {
 
 		return Promise.race([
 			this.characteristics.motor.state.readAsync(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((buffer) => {
 			if (buffer instanceof Buffer) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is reading current position as buffer`);
@@ -434,7 +436,7 @@ export class SOMADevice {
 
 		return Promise.race([
 			this.characteristics.motor.target.readAsync(),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then((buffer) => {
 			if (buffer instanceof Buffer) {
 				this.log.debug(`peripheral ${this.peripheral.id.toLowerCase()} is reading target position as buffer`);
@@ -466,7 +468,7 @@ export class SOMADevice {
 
 		return Promise.race([
 			this.characteristics.motor.target.writeAsync(Buffer.from([position]), false),
-			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), DEFAULT_TIMEOUT)),
+			new Promise((_, reject) => setTimeout(() => reject(new Error('timed out')), this.timeout)),
 		]).then(() => {
 			return new Promise<void>(resolve => resolve());
 		}).catch((error) => {

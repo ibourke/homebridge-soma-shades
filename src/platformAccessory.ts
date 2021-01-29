@@ -7,16 +7,12 @@ import {
 	CharacteristicGetCallback,
 } from 'homebridge';
 
-import { SOMAShadesPlatform } from './platform';
+import { SOMAShadesPlatform, SOMAShadesPlatformConfig } from './platform';
 
 import { SOMADevice } from './somaDevice';
 
 // battery level below 10% is considered low battery
 const LOW_BATTERY_LEVEL = 10;
-
-// refresh every 10 seconds
-// TODO: set through configuration
-const REFRESH_RATE = 10;
 
 // dummy replica of HAP.PositionState
 enum POSITION_STATE {
@@ -201,7 +197,7 @@ export class ShadesAccessory {
 				return false;
 			});
 			if (!initialized) {
-				await this.sleep(REFRESH_RATE);
+				await this.sleep((this.platform.config as SOMAShadesPlatformConfig).refreshRate);
 				continue;
 			}
 
@@ -256,7 +252,7 @@ export class ShadesAccessory {
 			this.platform.log.debug(`${this.accessory.displayName} done polling`);
 
 			// Sleep until our next update.
-			await this.sleep(REFRESH_RATE);
+			await this.sleep((this.platform.config as SOMAShadesPlatformConfig).refreshRate);
 		}
 	}
 

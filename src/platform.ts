@@ -9,10 +9,12 @@ import { SOMADevice } from './somaDevice';
 export interface SOMAShadesDeviceConfig {
 	name: string;
 	id: string;
+	timeout: number;
 }
 
 export interface SOMAShadesPlatformConfig extends PlatformConfig {
 	discoverDelay: number;
+	refreshRate: number;
 	devices: Array<SOMAShadesDeviceConfig>;
 }
 
@@ -173,7 +175,7 @@ export class SOMAShadesPlatform implements DynamicPlatformPlugin {
 			// the accessory already exists
 			this.log.debug('restoring existing accessory from cache:', existingAccessory.displayName);
 
-			new ShadesAccessory(this, existingAccessory, new SOMADevice(this.log, peripheral));
+			new ShadesAccessory(this, existingAccessory, new SOMADevice(this.log, peripheral, deviceConfig.timeout));
 
 			// update accessory cache with any changes to the accessory details and information
 			this.api.updatePlatformAccessories([existingAccessory]);

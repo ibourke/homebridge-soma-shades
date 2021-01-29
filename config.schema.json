@@ -12,6 +12,13 @@
 				"required": true,
 				"description": "Delay discovery of BLE devices, if you have other plugins that uses BLE and noble for communication"
 			},
+			"refreshRate": {
+				"type": "integer",
+				"default": 10,
+				"title": "Device Polling Interval (seconds)",
+				"required": false,
+				"description": "How often the status of each shade should be checked"
+			},
 			"devices": {
 				"type": "array",
 				"title": "Devices",
@@ -32,6 +39,13 @@
 							"required": true,
 							"placeholder": "e.g. d542c4c9a702",
 							"description": "MAC address of the SOMA Shades you want to connect, without colon. You can find this info in the Smart Shades app."
+						},
+						"timeout": {
+							"type": "integer",
+							"default": 10,
+							"title": "Connection Timeout (seconds)",
+							"required": false,
+							"description": "How long to wait before assuming that a connection to the shades has failed "
 						}
 					}
 				}
@@ -43,7 +57,8 @@
 			"type": "flex",
 			"flex-flow": "row wrap",
 			"items": [
-				"discoverDelay"
+				"discoverDelay",
+				"refreshRate"
 			]
 		},
 		{
@@ -55,7 +70,8 @@
 			"buttonText": "Add Shades",
 			"items": [
 				"devices[].name",
-				"devices[].id"
+				"devices[].id",
+				"devices[].timeout"
 			]
 		}
 	]
